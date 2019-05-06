@@ -3,6 +3,7 @@ package com.dj.flowable;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 import org.flowable.engine.common.api.delegate.event.FlowableEngineEventType;
 import org.flowable.engine.common.api.delegate.event.FlowableEvent;
@@ -50,35 +51,38 @@ public class CustomEventListener implements FlowableEventListener {
 
     @Override
     public void onEvent(FlowableEvent event) {
+
     	
-        try {
-			FlowableEventType eventType = event.getType();
+    	Executors.newCachedThreadPool().execute(() -> {
+    		 try {
+    				FlowableEventType eventType = event.getType();
+    				
+    				if (eventType == FlowableEngineEventType.TASK_COMPLETED) {
 
-			
-			if (eventType == FlowableEngineEventType.TASK_COMPLETED) {
+    				    if(logger.isInfoEnabled()) {
+    				    	String message = "EventListener raised .....of Type: " + eventType + " Class: " + event.getClass();
+    				    	logger.info(message);
+    				    }
+    				    			    
+    				    Map<String, Object> body = new HashMap<>();
+    				    body.put("taskId", ((TaskEntity)((FlowableEntityEventImpl) event).getEntity()).getId());
 
-			    if(logger.isInfoEnabled()) {
-			    	String message = "EventListener raised .....of Type: " + eventType + " Class: " + event.getClass();
-			    	logger.info(message);
-			    }
-			    			    
-			    Map<String, Object> body = new HashMap<>();
-			    body.put("taskId", ((TaskEntity)((FlowableEntityEventImpl) event).getEntity()).getId());
-
-			    if(logger.isInfoEnabled()) {
-			    	logger.info("Calling with: " + body);
-			    }
-			    
-			    restTemplate().put(baseEntryPoint + BPM_ACTION, body);
-			    
-			    if(logger.isInfoEnabled()) {
-			    	logger.info("Called Rest without exceptions!!");
-			    }
-			}
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
-		}
-
+    				    if(logger.isInfoEnabled()) {
+    				    	logger.info("Calling with: " + body);
+    				    }
+    				    
+    				    restTemplate().put(baseEntryPoint + BPM_ACTION, body);
+    				    
+    				    if(logger.isInfoEnabled()) {
+    				    	logger.info("Called Rest without exceptions!!");
+    				    }
+    				}
+    			} catch (Exception e) {
+    				logger.error(e.getMessage(), e);
+    			}
+    		
+    	});
+    	
 
     }
 
