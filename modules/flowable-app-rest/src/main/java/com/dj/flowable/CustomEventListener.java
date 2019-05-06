@@ -3,6 +3,7 @@ package com.dj.flowable;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.flowable.engine.common.api.delegate.event.FlowableEngineEventType;
@@ -23,6 +24,8 @@ import org.springframework.web.client.RestTemplate;
 public class CustomEventListener implements FlowableEventListener {
 
 	private static Logger logger = LoggerFactory.getLogger(CustomEventListener.class);
+	
+	private static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(10);
 
 	private static final String BPM_ACTION = "/bpm-action";
     
@@ -53,7 +56,7 @@ public class CustomEventListener implements FlowableEventListener {
     public void onEvent(FlowableEvent event) {
 
     	
-    	Executors.newCachedThreadPool().execute(() -> {
+    	THREAD_POOL.execute(() -> {
     		 try {
     				FlowableEventType eventType = event.getType();
     				
