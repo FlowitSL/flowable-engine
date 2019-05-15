@@ -1,11 +1,5 @@
 package com.dj.flowable;
 
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import org.flowable.engine.common.api.delegate.event.FlowableEngineEventType;
 import org.flowable.engine.common.api.delegate.event.FlowableEvent;
 import org.flowable.engine.common.api.delegate.event.FlowableEventListener;
@@ -18,17 +12,22 @@ import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
-/**
- * Created by kychoms on 10/05/17.
- */
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class CustomEventListener implements FlowableEventListener {
 
 	private static Logger logger = LoggerFactory.getLogger(CustomEventListener.class);
 	
-	private static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(10);
+	private static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(20);
 
 	private static final String BPM_ACTION = "/bpm-action";
-    
+
+	private static final int READ_TIMEOUT       = 10000;
+    private static final int CONNECTION_TIMEOUT = 10000;
+
     private String baseEntryPoint;
     
     public CustomEventListener(String url) {
@@ -37,8 +36,6 @@ public class CustomEventListener implements FlowableEventListener {
     	
     }
 
-  
-
 	public RestTemplate restTemplate() {
         return new RestTemplate(clientHttpRequestFactory());
     }
@@ -46,8 +43,9 @@ public class CustomEventListener implements FlowableEventListener {
     private ClientHttpRequestFactory clientHttpRequestFactory() {
         HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
         // Be careful without this all Tomcat can freeze by not responding request !!!
-        factory.setReadTimeout(2000);
-        factory.setConnectTimeout(2000);
+        factory.setReadTimeout(READ_TIMEOUT);
+        factory.setConnectTimeout(CONNECTION_TIMEOUT);
+
         return factory;
     }
 
@@ -85,7 +83,6 @@ public class CustomEventListener implements FlowableEventListener {
     			}
     		
     	});
-    	
 
     }
 
