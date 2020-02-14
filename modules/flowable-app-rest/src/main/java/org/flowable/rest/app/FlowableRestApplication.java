@@ -12,10 +12,13 @@
  */
 package org.flowable.rest.app;
 
+import org.flowable.engine.impl.db.DbIdGenerator;
 import org.flowable.rest.app.properties.RestAppProperties;
 import org.flowable.rest.conf.BootstrapConfiguration;
 import org.flowable.rest.conf.DevelopmentConfiguration;
 import org.flowable.rest.conf.SecurityConfiguration;
+import org.flowable.spring.SpringProcessEngineConfiguration;
+import org.flowable.spring.boot.EngineConfigurationConfigurer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -59,5 +62,10 @@ public class FlowableRestApplication extends SpringBootServletInitializer {
     @Bean
     public GrantedAuthorityDefaults grantedAuthorityDefaults(RestAppProperties commonAppProperties) {
         return new GrantedAuthorityDefaults(commonAppProperties.getRolePrefix());
+    }
+    
+    @Bean
+    public EngineConfigurationConfigurer<SpringProcessEngineConfiguration> processEngineDbIdGeneratorConfigurer() {
+        return engineConfiguration -> engineConfiguration.setIdGenerator(new DbIdGenerator());
     }
 }

@@ -17,15 +17,29 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.flowable.common.engine.api.FlowableException;
+import org.flowable.common.engine.impl.cfg.IdGenerator;
+import org.flowable.engine.ProcessEngine;
+import org.flowable.engine.ProcessEngines;
 import org.flowable.engine.RepositoryService;
+import org.flowable.engine.RuntimeService;
+import org.flowable.engine.impl.db.DbIdGenerator;
 import org.flowable.engine.repository.Deployment;
 import org.flowable.idm.api.IdmIdentityService;
 import org.flowable.idm.api.Privilege;
 import org.flowable.idm.api.User;
 import org.flowable.rest.app.properties.RestAppProperties;
+import org.flowable.rest.events.CustomEventListener;
 import org.flowable.rest.security.SecurityConstants;
+import org.flowable.rest.serialize.JsonVariableType;
+import org.flowable.spring.SpringProcessEngineConfiguration;
+import org.flowable.spring.boot.EngineConfigurationConfigurer;
+import org.flowable.spring.boot.process.Process;
+import org.flowable.variable.api.types.VariableTypes;
+import org.flowable.variable.service.impl.types.SerializableType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -45,12 +59,40 @@ public class BootstrapConfiguration {
     protected final IdmIdentityService idmIdentityService;
 
     protected final RestAppProperties restAppProperties;
+    
+    protected final RuntimeService runtimeService;
 
-    public BootstrapConfiguration(RepositoryService repositoryService, IdmIdentityService idmIdentityService, RestAppProperties restAppProperties) {
+    @Value("${url.dj.adapter:http://localhost:8080}")
+    private String defaulDjAdapterUrl;
+    
+    public BootstrapConfiguration(RepositoryService repositoryService, IdmIdentityService idmIdentityService, RestAppProperties restAppProperties, RuntimeService runtimeService) {
         this.repositoryService = repositoryService;
         this.idmIdentityService = idmIdentityService;
         this.restAppProperties = restAppProperties;
+        this.runtimeService = runtimeService;
     }
+
+    /**
+     * Initialize event listener
+     */
+    @Bean
+    public CommandLineRunner initEventListener() {
+    	return args -> runtimeService.addEventListener(new CustomEventListener(defaulDjAdapterUrl));
+    }
+    
+    @Bean
+    public CommandLineRunner addJsonSerializable(
+    		@Process ObjectProvider<IdGenerator> processIdGenerator,
+            ObjectProvider<IdGenerator> globalIdGenerator) {
+
+    	return args -> {
+    		ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+    		VariableTypes variableTypes = ((SpringProcessEngineConfiguration)processEngine.getProcessEngineConfiguration()).getVariableTypes();
+    		variableTypes.addType(new JsonVariableType(true),variableTypes.getTypeIndex(SerializableType.TYPE_NAME));
+    	};
+    	
+    }
+
 
     /**
      * Initialize the rest admin user
